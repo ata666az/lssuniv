@@ -1,0 +1,47 @@
+services:
+  nautica-lb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nautica-lb
+    restart: unless-stopped
+
+    # Public HTTP port. If you use Cloudflare Proxy, Cloudflare can
+    # terminate HTTPS/WSS and forward to this origin over HTTP.
+    ports:
+      - "80:8000"
+
+    environment:
+      NODE_ENV: production
+      PORT: "8000"
+      DATA_DIR: "/app/data"
+
+      # Change these before first production use.
+      DEFAULT_ADMIN_PASSWORD: "${DEFAULT_ADMIN_PASSWORD:-CHANGE-ME-ADMIN-PASSWORD}"
+      SESSION_SECRET: "${SESSION_SECRET:-CHANGE-ME-LONG-RANDOM-SECRET}"
+
+      # Optional:
+      # PROXY_BANK_URL: "https://raw.githubusercontent.com/papapapapdelesia/Emilia/refs/heads/main/Data/Country-ALIVE.txt"
+      # DONATE_LINK: ""
+
+    volumes:
+      - nautica_data:/app/data
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:8000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    stop_grace_period: 10s
+
+volumes:
+  nautica_data:
+    name: nautica-lb-data
